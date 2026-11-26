@@ -9,3 +9,6 @@ Struktur:
 - netlify/functions/ -> feedback.mjs (kirim laporan ke Discord)
 - netlify.toml       -> pengaturan Netlify
 - KONVERSI_MODEL_COLAB.py -> skrip konversi model (jalankan di Google Colab, bukan di Netlify)
+- tools/perbaiki_model_keras3.py -> memperbaiki model TF.js hasil konversi Keras 3 supaya bisa dibaca TensorFlow.js
+  Pakai: python3 tools/perbaiki_model_keras3.py <folder_model_asli> <folder_hasil>, lalu salin isi <folder_hasil> ke public/model/
+  (dan config.json), lalu naikkan modelVersi di public/local-api.js.

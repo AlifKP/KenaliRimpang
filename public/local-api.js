@@ -19,6 +19,7 @@
     sesiHari: 30,
     pbkdf2: 200000,
     modelDir: "model/",
+    modelVersi: "2",         // naikkan setiap kali file model diganti agar cache browser tidak memakai model lama
     feedbackUrl: "/.netlify/functions/feedback",
   };
   const CLASSES = ["Jahe", "Kencur", "Kunyit", "Lengkuas", "Temulawak"];
@@ -181,10 +182,10 @@
     if (!modelPromise) {
       modelPromise = (async () => {
         if (typeof tf === "undefined") throw new Galat(500, "TensorFlow.js gagal dimuat. Periksa koneksi internet lalu muat ulang halaman.");
-        const r = await nativeFetch(CFG.modelDir + "config.json", { cache: "no-store" });
+        const r = await nativeFetch(CFG.modelDir + "config.json?v=" + CFG.modelVersi, { cache: "no-store" });
         if (!r.ok) throw new Galat(500, "Model belum dipasang: file model/config.json tidak ditemukan.");
         cfgModel = await r.json();
-        const url = CFG.modelDir + "model.json";
+        const url = CFG.modelDir + "model.json?v=" + CFG.modelVersi;
         const model = cfgModel.format === "layers" ? await tf.loadLayersModel(url) : await tf.loadGraphModel(url);
         const s = cfgModel.img_size;
         tf.tidy(() => { // pemanasan agar prediksi pertama tidak lambat
