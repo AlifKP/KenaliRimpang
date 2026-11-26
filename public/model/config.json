@@ -1,0 +1,12 @@
+{
+  "format": "layers",
+  "img_size": 224,
+  "preprocess": "mobilenet",
+  "classes": [
+    "Jahe",
+    "Kencur",
+    "Kunyit",
+    "Lengkuas",
+    "Temulawak"
+  ]
+}

@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KenaliRimpang: Klasifikasi Rempah Rimpang Berbasis AI</title>
+  <meta name="description" content="Unggah atau foto rimpang, AI mengenali jahe, kunyit, lengkuas, kencur, atau temulawak.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN (preflight dimatikan agar tidak menimpa CSS kustom di bawah) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    if (window.tailwind) {
+      tailwind.config = {
+        corePlugins: { preflight: false },
+        theme: { extend: { fontFamily: { sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'] } } },
+      };
+    }
+  </script>
+
+  <style>
+/* =========================================================================
+   KenaliRimpang - UI bersih & profesional
+   Palet: Slate netral, aksen Emerald herbal, sentuhan Amber hangat.
+   Semua layout memakai class kustom, jadi tampilan tetap rapi walaupun
+   Tailwind CDN gagal dimuat. `hidden` dan `sr-only` dipakai script.js.
+   ========================================================================= */
+:root {
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --line: #e2e8f0;
+  --line-2: #cbd5e1;
+  --ink: #0f172a;
+  --ink-2: #334155;
+  --muted: #475569;
+  --faint: #64748b;
+
+  --em-50: #ecfdf5;
+  --em-100: #d1fae5;
+  --em-200: #a7f3d0;
+  --em-500: #10b981;
+  --em-600: #059669;
+  --em-700: #047857;
+  --em-800: #065f46;
+
+  --am-100: #fef3c7;
+  --am-400: #fbbf24;
+  --am-500: #f59e0b;
+  --am-600: #d97706;
+
+  --err: #b91c1c;
+  --err-bg: #fef2f2;
+
+  --soft: #f1f5f9;
+  --soft-2: #f8fafc;
+  --field: #ffffff;
+  --chip: #e2e8f0;
+  --dis-bg: #e2e8f0;
+  --dis-ink: #94a3b8;
+  --am-ink: #78350f;
+  --lime-bg: #ecfccb;
+  --lime-ink: #3f6212;
+  --accent: #047857;
+  --accent-2: #065f46;
+  color-scheme: light;
+
+  --r-lg: 20px;
+  --r-md: 14px;
+  --r-sm: 10px;
+  --shadow: 0 1px 2px rgba(15, 23, 42, .04), 0 12px 28px -14px rgba(15, 23, 42, .16);
+}
+
+/* ---------- Mode gelap: hanya mengganti nilai variabel warna ---------- */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0b1220;
+  --surface: #111a2c;
+  --line: #223049;
+  --line-2: #31425f;
+  --ink: #e6edf7;
+  --ink-2: #c3cfdf;
+  --muted: #9fb0c6;
+  --faint: #8294ad;
+
+  --em-50: #0c241f;
+  --em-100: #123a30;
+  --em-200: #1d5b49;
+  --em-600: #10b981;
+  --am-100: #3a2a0b;
+  --err: #fca5a5;
+  --err-bg: #3b1214;
+
+  --soft: #1a2538;
+  --soft-2: #0f1727;
+  --field: #0d1626;
+  --chip: #26344d;
+  --dis-bg: #1e2a3f;
+  --dis-ink: #64748b;
+  --am-ink: #fde68a;
+  --lime-bg: #1c2d0a;
+  --lime-ink: #d9f99d;
+  --accent: #34d399;
+  --accent-2: #6ee7b7;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .35), 0 12px 28px -14px rgba(0, 0, 0, .65);
+}
+
+/* Tombol ganti mode (kanan atas) */
+.theme-toggle {
+  flex: none;
+  width: 42px; height: 42px; display: grid; place-items: center; padding: 0;
+  border-radius: 999px; border: 1px solid var(--line-2);
+  background: var(--surface); color: var(--ink-2); box-shadow: var(--shadow);
+  transition: transform .15s ease, border-color .15s ease, color .15s ease;
+}
+.theme-toggle:hover { transform: translateY(-1px); border-color: var(--em-600); color: var(--accent); }
+.theme-toggle svg { width: 20px; height: 20px; }
+.theme-toggle .ico-sun { display: none; }
+:root[data-theme="dark"] .theme-toggle .ico-sun { display: block; }
+:root[data-theme="dark"] .theme-toggle .ico-moon { display: none; }
+
+/* ---------- Reset ringan (tidak bergantung pada Tailwind preflight) ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+h1, h2, h3, p, figure, dl, dd, ul { margin: 0; }
+ul { padding: 0; list-style: none; }
+img, video, svg { display: block; max-width: 100%; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+::selection { background: var(--em-100); }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(900px 420px at 0% -10%, rgba(16, 185, 129, .09), transparent 60%),
+    radial-gradient(700px 380px at 100% -6%, rgba(245, 158, 11, .08), transparent 60%),
+    var(--bg);
+  background-repeat: no-repeat;
+  color: var(--ink);
+  font-family: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible { outline: 3px solid var(--em-500); outline-offset: 3px; border-radius: 8px; }
+
+/* ---------- Utilitas yang dipakai script.js ---------- */
+.hidden { display: none !important; }
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---------- Layout 2 kolom seimbang ---------- */
+.page { max-width: 1200px; margin: 0 auto; padding: clamp(24px, 5vw, 64px) clamp(16px, 3vw, 32px) clamp(32px, 5vw, 64px); }
+.layout { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; align-items: start; }
+.col { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+@media (max-width: 920px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---------- Hero ---------- */
+.hero-title {
+  font-weight: 800;
+  font-size: clamp(2.7rem, 6.5vw, 4.3rem);
+  line-height: 1;
+  letter-spacing: -.045em;
+  color: var(--ink);
+}
+.hero-title span {
+  color: var(--em-600); }
+.hero-sub { margin-top: 18px; max-width: 33rem; font-size: 1.06rem; color: var(--muted); }
+
+.tips li::before {
+  content: ""; flex: none; width: 16px; height: 16px;
+  background: var(--em-600);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M4.5 10.5l3.5 3.5 7.5-8' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M4.5 10.5l3.5 3.5 7.5-8' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+/* ---------- Kartu umum ---------- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow);
+}
+.upload, .gallery { padding: clamp(18px, 3vw, 26px); }
+.card-title { font-size: 1.3rem; font-weight: 700; letter-spacing: -.02em; color: var(--ink); }
+.card-hint { margin-top: 4px; font-size: .9rem; color: var(--muted); }
+
+/* ---------- Galeri jenis rimpang ---------- */
+.gallery { container-type: inline-size; container-name: gallery; }
+.gallery-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin-top: 16px; }
+.tile { text-align: center; min-width: 0; }
+.thumb {
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.thumb img { width: 100%; height: 100%; object-fit: cover; }
+.tile-name { display: block; margin-top: 8px; font-size: .86rem; font-weight: 700; color: var(--ink); }
+@container gallery (max-width: 440px) { .gallery-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .gallery-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+/* ---------- Dropzone ---------- */
+.dropzone {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px; text-align: center;
+  margin-top: 20px; padding: 34px 18px;
+  background: var(--soft-2);
+  border: 2px dashed var(--line-2);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: background-color .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+.dropzone:hover, .dropzone.dragover {
+  background: var(--em-50);
+  border-color: var(--em-500);
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, .1);
+}
+.dz-icon {
+  display: grid; place-items: center;
+  width: 56px; height: 56px; margin-bottom: 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  color: var(--accent);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, .06);
+  transition: transform .2s ease, background-color .2s ease, color .2s ease, border-color .2s ease;
+}
+.dropzone:hover .dz-icon, .dropzone.dragover .dz-icon { transform: translateY(-3px); background: var(--em-600); border-color: var(--em-600); color: #fff; }
+.dz-title { font-weight: 700; font-size: 1.02rem; color: var(--ink); }
+.dz-sub { font-size: .86rem; color: var(--muted); }
+
+.divider { display: flex; align-items: center; gap: 12px; margin: 18px 0; font-size: .82rem; color: var(--faint); }
+.divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+/* ---------- Tombol ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  padding: .8rem 1.3rem;
+  border: 1.5px solid transparent; border-radius: var(--r-md);
+  font-weight: 700; line-height: 1.2;
+  transition: transform .15s ease, box-shadow .15s ease, background-color .15s ease, color .15s ease, border-color .15s ease;
+}
+.btn-block { width: 100%; }
+
+.btn-camera { background: var(--surface); border-color: var(--line-2); color: var(--ink-2); }
+.btn-camera:hover { background: var(--em-50); border-color: var(--em-500); color: var(--accent-2); }
+
+.btn-primary {
+  background: var(--em-700); color: #fff;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .16) inset, 0 8px 16px -10px rgba(4, 120, 87, .8);
+}
+.btn-primary:hover:not(:disabled) { background: var(--em-800); transform: translateY(-1px); }
+.btn-primary:active:not(:disabled) { transform: translateY(0); }
+.btn-primary:disabled { background: var(--dis-bg); color: var(--dis-ink); box-shadow: none; cursor: not-allowed; }
+
+.btn-classify { margin-top: 20px; padding: 1.05rem 1.4rem; font-size: 1.08rem; letter-spacing: .005em; }
+/* panah dibuat lewat CSS agar tidak hilang saat script.js mengganti textContent tombol */
+.btn-classify::after {
+  content: ""; width: 20px; height: 20px; background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M4 10h11m0 0l-4.5-4.5M15 10l-4.5 4.5' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M4 10h11m0 0l-4.5-4.5M15 10l-4.5 4.5' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  transition: transform .15s ease;
+}
+.btn-classify:hover:not(:disabled)::after { transform: translateX(3px); }
+
+.btn-ghost { background: var(--surface); border-color: var(--line-2); color: var(--ink-2); padding: .65rem 1.1rem; font-size: .92rem; }
+.btn-ghost:hover { border-color: var(--em-600); color: var(--accent); background: var(--em-50); }
+
+.link { background: none; border: 0; padding: 0; color: var(--accent); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.link:hover { color: var(--accent-2); }
+
+/* ---------- Preview ---------- */
+.preview-frame {
+  display: grid; place-items: center;
+  aspect-ratio: 4 / 3; overflow: hidden;
+  background: var(--soft);
+  border: 1px solid var(--line); border-radius: 16px;
+}
+.preview-frame img { width: 100%; height: 100%; object-fit: contain; }
+.preview-meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px; font-size: .86rem; color: var(--muted); }
+.error { margin-top: 16px; padding: 10px 14px; border-radius: 12px; background: var(--err-bg); color: var(--err); font-size: .9rem; font-weight: 600; }
+
+/* ---------- Panel hasil ---------- */
+.panel-head h2 { font-size: 1.3rem; font-weight: 700; letter-spacing: -.02em; }
+.panel-head p { margin-top: 4px; font-size: .9rem; color: var(--muted); }
+.stack > * + * { margin-top: 20px; }
+#resultState:not(.hidden) { animation: rise .4s ease-out; }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+.empty { padding: 40px 26px; text-align: center; }
+.empty-icon {
+  display: grid; place-items: center;
+  width: 64px; height: 64px; margin: 0 auto 18px;
+  background: var(--em-50); border: 1px solid var(--em-100); border-radius: 18px;
+  color: var(--accent);
+}
+.empty h3 { font-size: 1.25rem; font-weight: 700; letter-spacing: -.02em; }
+.empty > p { margin: 6px auto 0; max-width: 24rem; color: var(--muted); }
+.tips { margin: 24px auto 0; max-width: 25rem; text-align: left; display: grid; gap: 10px; }
+.tips li { display: flex; gap: 10px; align-items: flex-start; font-size: .92rem; color: var(--ink-2); }
+.tips li::before { margin-top: 3px; width: 18px; height: 18px; }
+
+.loading { display: flex; align-items: center; gap: 16px; padding: 30px 26px; font-weight: 600; }
+.spinner { width: 28px; height: 28px; border-radius: 50%; border: 3px solid var(--em-100); border-top-color: var(--em-600); animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---------- Hasil utama ---------- */
+.result-hero {
+  position: relative; overflow: hidden;
+  padding: clamp(20px, 3vw, 28px);
+  border-radius: var(--r-lg);
+  color: #fff;
+  background:
+    radial-gradient(420px 220px at 100% 0%, rgba(16, 185, 129, .28), transparent 70%),
+    linear-gradient(160deg, #0f172a, #1e293b);
+  box-shadow: 0 24px 44px -26px rgba(15, 23, 42, .9);
+}
+.result-hero::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 3px; background: linear-gradient(90deg, var(--em-500), var(--am-500)); }
+.result-row { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 18px; }
+.res-cap { font-size: .86rem; color: #cbd5e1; }
+.res-label { margin-top: 4px; font-weight: 800; font-size: clamp(2.4rem, 7vw, 3.7rem); line-height: 1; letter-spacing: -.04em; }
+.res-latin { margin-top: 8px; font-style: italic; color: #cbd5e1; }
+.res-conf-box { text-align: right; }
+.res-conf { margin-top: 2px; font-weight: 800; font-size: clamp(2rem, 5vw, 2.7rem); line-height: 1; letter-spacing: -.03em; color: var(--am-400); font-variant-numeric: tabular-nums; }
+
+.notice { margin-top: 16px; padding: 10px 14px; border-radius: 12px; background: var(--am-100); color: var(--am-ink); font-size: .88rem; font-weight: 600; }
+.notice-demo { background: rgba(255, 255, 255, .1); color: #e2e8f0; font-weight: 500; }
+
+/* ---------- Probabilitas ---------- */
+.block { padding: clamp(18px, 3vw, 26px); }
+.block h3 { font-size: 1.15rem; font-weight: 700; letter-spacing: -.015em; }
+.prob-list { margin-top: 16px; display: grid; gap: 14px; }
+.prob-row { display: grid; grid-template-columns: 96px 1fr 64px; gap: 12px; align-items: center; font-size: .94rem; }
+.prob-track { height: 12px; overflow: hidden; background: var(--soft); border-radius: 999px; }
+.prob-fill { height: 100%; width: 0; border-radius: 999px; transition: width .8s cubic-bezier(.2, .8, .2, 1); }
+.prob-row .name { color: var(--ink-2); }
+.prob-row .pct { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+.prob-row.top .name, .prob-row.top .pct { font-weight: 800; color: var(--ink); }
+.meta { margin-top: 16px; font-size: .78rem; color: var(--faint); }
+
+/* ---------- Edukasi ---------- */
+.edu { border-top: 3px solid var(--em-500); }
+.edu h3 span { color: var(--accent); }
+.edu-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 28px; margin-top: 16px; font-size: .95rem; color: var(--ink-2); }
+.edu-grid dt { font-weight: 800; font-size: .86rem; color: var(--ink); margin-bottom: 4px; }
+.edu-wide { grid-column: 1 / -1; }
+.bullets { display: grid; gap: 6px; }
+.bullets li { position: relative; padding-left: 20px; }
+.bullets li::before { content: ""; position: absolute; left: 2px; top: .62em; width: 7px; height: 7px; border-radius: 2px; background: var(--am-500); transform: rotate(45deg); }
+.tip { padding: 12px 16px; border-left: 4px solid var(--em-600); border-radius: 10px; background: var(--em-50); }
+.disclaimer { margin-top: 16px; font-size: .78rem; color: var(--faint); }
+@media (max-width: 560px) { .edu-grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---------- Feedback ---------- */
+.fb-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; }
+.fb-form { display: grid; gap: 16px; margin-top: 20px; }
+.label { display: block; margin-bottom: 6px; font-size: .88rem; font-weight: 700; }
+.field { width: 100%; padding: .7rem .9rem; background: var(--field); border: 1.5px solid var(--line-2); border-radius: 12px; }
+.field:focus { outline: none; border-color: var(--em-600); box-shadow: 0 0 0 4px rgba(16, 185, 129, .18); }
+.fb-msg { margin-top: 16px; font-size: .9rem; font-weight: 700; color: var(--accent); }
+
+/* ---------- Tim pengembang ---------- */
+.team { margin-top: clamp(48px, 7vw, 88px); padding-top: clamp(28px, 4vw, 44px); border-top: 1px solid var(--line); }
+.team-title { font-size: clamp(1.5rem, 3vw, 1.9rem); font-weight: 800; letter-spacing: -.03em; }
+.team-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; margin-top: 28px; }
+.member-card {
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  flex: 0 0 100%; min-width: 0;
+  padding: 26px 18px 22px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow);
+  transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+.member-card:hover { transform: translateY(-3px); border-color: var(--em-200); box-shadow: 0 1px 2px rgba(15, 23, 42, .04), 0 18px 32px -16px rgba(4, 120, 87, .28); }
+.member-photo {
+  width: 96px; height: 96px; object-fit: cover;
+  border-radius: 50%;
+  background: var(--soft);
+  border: 3px solid var(--surface);
+  box-shadow: 0 0 0 2px var(--em-200), 0 8px 18px -8px rgba(15, 23, 42, .35);
+}
+.member-name { margin-top: 16px; font-size: 1.02rem; font-weight: 700; letter-spacing: -.01em; color: var(--ink); overflow-wrap: anywhere; }
+.member-npm { margin-top: 2px; font-size: .84rem; font-variant-numeric: tabular-nums; color: var(--faint); }
+.member-ig { margin-top: 8px; display: inline-flex; align-items: center; gap: 6px; max-width: 100%; font-size: .8rem; font-weight: 600; color: var(--accent-2); text-decoration: none; overflow-wrap: anywhere; }
+.member-ig svg { width: 14px; height: 14px; flex: none; }
+.member-ig:hover, .member-ig:focus-visible { text-decoration: underline; }
+.role-badge { margin-top: 12px; padding: 4px 12px; border-radius: 999px; font-size: .78rem; font-weight: 700; line-height: 1.4; }
+.role-pm { background: var(--em-100); color: var(--accent-2); }
+.role-ds { background: var(--am-100); color: var(--am-ink); }
+.role-ai { background: var(--chip); color: var(--ink); }
+.role-sc { background: var(--am-100); color: var(--am-ink); }
+.role-se { background: var(--lime-bg); color: var(--lime-ink); }
+.member-desc { margin-top: 12px; font-size: .88rem; line-height: 1.55; color: var(--muted); }
+@media (min-width: 480px) { .member-card { flex-basis: calc((100% - 16px) / 2); } }
+@media (min-width: 760px) { .member-card { flex-basis: calc((100% - 32px) / 3); } }
+@media (min-width: 1100px) { .member-card { flex-basis: calc((100% - 64px) / 5); } }
+
+/* ---------- Dialog kamera ---------- */
+.camera-dialog { width: min(92vw, 560px); padding: 0; border: 0; border-radius: 22px; background: var(--surface); }
+.camera-dialog::backdrop { background: rgba(15, 23, 42, .65); backdrop-filter: blur(3px); }
+.camera-dialog .inner { padding: 16px; }
+.camera-dialog video { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 14px; background: #000; }
+.camera-title { margin-bottom: 12px; font-size: 1.1rem; font-weight: 700; letter-spacing: -.01em; }
+.camera-stage { position: relative; }
+.camera-status {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  padding: 16px; text-align: center; font-size: .92rem; font-weight: 600; color: #fff;
+  background: rgba(15, 23, 42, .55); border-radius: 14px;
+}
+.camera-status[hidden] { display: none; }
+.camera-actions { display: flex; gap: 12px; margin-top: 14px; }
+.camera-actions .btn { flex: 1; }
+
+/* ---------- Akun (masuk/daftar), riwayat, dan dialog ---------- */
+.topbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; margin: -12px 0 20px; }
+.topbar .btn-ghost { padding: .5rem .95rem; font-size: .88rem; }
+.akun-info {
+  display: inline-flex; align-items: center; max-width: 180px; padding: .5rem .85rem; border-radius: 999px;
+  background: var(--em-50); color: var(--accent-2); font-size: .88rem; font-weight: 700;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.modal {
+  width: min(92vw, 440px); max-height: 90vh; padding: 0; border: 0; border-radius: 22px;
+  background: var(--surface); color: var(--ink); box-shadow: var(--shadow);
+}
+.modal::backdrop { background: rgba(15, 23, 42, .65); backdrop-filter: blur(3px); }
+.modal .inner { padding: 20px; }
+.modal-wide { width: min(94vw, 640px); }
+.modal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.modal-head .camera-title { margin-bottom: 0; }
+.modal-foot { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+.auth-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: 14px 0 12px; padding: 4px; border-radius: 14px; background: var(--soft); }
+.auth-tab { padding: .55rem; border: 0; border-radius: 10px; background: transparent; color: var(--muted); font-weight: 700; cursor: pointer; }
+.auth-tab.active { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+.auth-form { display: grid; gap: 12px; margin-top: 12px; }
+.auth-form .error { margin-top: 0; }
+.history-list { display: grid; gap: 10px; max-height: 58vh; margin-top: 14px; overflow: auto; }
+.history-item {
+  display: grid; grid-template-columns: 72px minmax(0, 1fr) auto; gap: 12px; align-items: center;
+  padding: 10px; border: 1px solid var(--line); border-radius: 14px; background: var(--soft-2);
+}
+.history-thumb { width: 72px; height: 72px; object-fit: cover; border-radius: 10px; background: var(--soft); }
+.history-label { font-size: 1.02rem; font-weight: 800; }
+.history-conf { margin-left: 6px; font-size: .86rem; font-weight: 700; color: var(--accent); }
+.history-time { margin-top: 2px; font-size: .8rem; color: var(--muted); }
+.history-detail { margin-top: 2px; font-size: .8rem; color: var(--ink-2); }
+.history-del { padding: .45rem .8rem; font-size: .82rem; }
+.history-empty { margin-top: 18px; padding: 22px 12px; border-radius: 14px; background: var(--soft-2); color: var(--muted); text-align: center; font-size: .92rem; }
+.res-hint { margin-top: 14px; font-size: .86rem; color: #cbd5e1; }
+.res-hint-btn { padding: 0; border: 0; background: none; color: #6ee7b7; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+
+/* ---------- Halaman login (tampil lebih dulu bila login wajib) ---------- */
+body.belum-login .page { visibility: hidden; }
+.modal.auth-gate {
+  width: 100vw; max-width: none; height: 100vh; height: 100dvh; max-height: none;
+  border-radius: 0; background: var(--bg); box-shadow: none;
+}
+.modal.auth-gate[open] { display: grid; place-items: center; overflow: auto; }
+.modal.auth-gate::backdrop { background: var(--bg); backdrop-filter: none; }
+.modal.auth-gate .inner {
+  width: min(92vw, 440px); padding: 28px 24px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 22px; box-shadow: var(--shadow);
+}
+.auth-brand { margin-bottom: 10px; }
+.auth-brand-title { font-size: clamp(2rem, 8vw, 2.6rem); font-weight: 800; line-height: 1.05; letter-spacing: -.04em; }
+.auth-brand-title span { color: var(--em-600); }
+.auth-brand p { margin-top: 6px; font-size: .92rem; color: var(--muted); }
+
+/* ---------- Foto belum dikenali dengan yakin ---------- */
+.reject-icon { background: var(--am-100); color: var(--am-ink); }
+.empty > .reject-guess { margin-top: 12px; padding: 10px 14px; border-radius: 12px; background: var(--soft-2); color: var(--ink-2); font-size: .9rem; }
+.empty > .reject-note { margin-top: 18px; font-size: .82rem; color: var(--muted); }
+.link-btn { padding: 0; border: 0; background: none; color: var(--accent); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.history-badge { margin-left: 6px; padding: 2px 8px; border-radius: 999px; background: var(--am-100); color: var(--am-ink); font-size: .74rem; font-weight: 700; vertical-align: middle; }
+.history-item.tolak { border-style: dashed; }
+@media (max-width: 520px) { .history-item { grid-template-columns: 60px minmax(0, 1fr); } .history-thumb { width: 60px; height: 60px; } .history-del { grid-column: 1 / -1; } }
+
+@media (max-width: 480px) {
+  .prob-row { grid-template-columns: 78px 1fr 58px; gap: 8px; }
+  .res-conf-box { text-align: left; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .prob-fill, .dropzone, .dz-icon, .btn, .btn-classify::after, .member-card { transition: none; }
+  #resultState:not(.hidden) { animation: none; }
+  .spinner { animation-duration: 2.4s; }
+}
+
+  </style>
+  <meta name="theme-color" content="#f8fafc">
+  <!-- Terapkan tema tersimpan sebelum halaman tampil, agar tidak berkedip -->
+  <script>
+    (function () {
+      try {
+        var tersimpan = localStorage.getItem("tema");
+        var gelap = tersimpan ? tersimpan === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", gelap ? "dark" : "light");
+      } catch (e) {}
+    })();
+  </script>
+</head>
+
+<body class="antialiased belum-login">
+  <noscript><style>body.belum-login .page { visibility: visible; }</style></noscript>
+  <div class="page">
+    <!-- Bilah atas: akun, riwayat, dan ganti mode terang/gelap -->
+    <div class="topbar">
+      <span id="akunInfo" class="akun-info hidden"></span>
+      <button type="button" id="btnRiwayat" class="btn btn-ghost hidden">Riwayat</button>
+      <button type="button" id="btnKeluar" class="btn btn-ghost hidden">Keluar</button>
+      <button type="button" id="btnMasuk" class="btn btn-ghost">Masuk / Daftar</button>
+    <button type="button" id="themeToggle" class="theme-toggle" aria-label="Beralih ke mode gelap" aria-pressed="false" title="Ganti mode terang/gelap">
+    <svg class="ico-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+    <svg class="ico-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+    </button>
+    </div>
+    <div class="layout">
+
+      <!-- ===================== KOLOM KIRI: HERO + GALERI + INPUT ===================== -->
+      <div class="col">
+
+        <header class="hero">
+          <h1 class="hero-title">Kenali<span>Rimpang</span></h1>
+          <p class="hero-sub">
+            Aplikasi klasifikasi rempah rimpang berbasis kecerdasan buatan. Foto rimpangnya, dan AI akan membedakan jahe, kunyit, lengkuas, kencur, atau temulawak.
+          </p>
+        </header>
+
+        <!-- Galeri jenis rimpang: foto dimuat dari static/images/ (jahe.jpg, kunyit.jpg, lengkuas.jpg, kencur.jpg, temulawak.jpg) -->
+        <section class="card gallery" aria-labelledby="judul-galeri">
+          <h2 id="judul-galeri" class="card-title">Jenis yang dikenali</h2>
+          <p class="card-hint">Lima rimpang yang sering tertukar karena bentuknya mirip.</p>
+
+          <ul class="gallery-grid">
+            <li class="tile">
+              <div class="thumb">
+                <img src="images/jahe.jpg" alt="Jahe" loading="lazy">
+              </div>
+              <span class="tile-name">Jahe</span>
+            </li>
+
+            <li class="tile">
+              <div class="thumb">
+                <img src="images/kunyit.jpg" alt="Kunyit" loading="lazy">
+              </div>
+              <span class="tile-name">Kunyit</span>
+            </li>
+
+            <li class="tile">
+              <div class="thumb">
+                <img src="images/lengkuas.jpg" alt="Lengkuas" loading="lazy">
+              </div>
+              <span class="tile-name">Lengkuas</span>
+            </li>
+
+            <li class="tile">
+              <div class="thumb">
+                <img src="images/kencur.jpg" alt="Kencur" loading="lazy">
+              </div>
+              <span class="tile-name">Kencur</span>
+            </li>
+
+            <li class="tile">
+              <div class="thumb">
+                <img src="images/temulawak.jpg" alt="Temulawak" loading="lazy">
+              </div>
+              <span class="tile-name">Temulawak</span>
+            </li>
+          </ul>
+        </section>
+
+        <section id="klasifikasi" class="card upload" aria-labelledby="judul-input">
+          <h2 id="judul-input" class="card-title">Unggah foto rimpang</h2>
+          <p class="card-hint">Pakai foto dekat, cahaya cukup, dan latar polos agar hasilnya lebih akurat.</p>
+
+          <!-- Zona drag-and-drop -->
+          <label id="dropzone" for="fileInput" class="dropzone" tabindex="0">
+            <span class="dz-icon" aria-hidden="true">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5"/><path d="M4 15v3a2 2 0 002 2h12a2 2 0 002-2v-3"/>
+              </svg>
+            </span>
+            <span class="dz-title">Tarik foto ke sini atau klik untuk memilih</span>
+            <span class="dz-sub">JPG, PNG, atau WEBP, maksimal 15 MB</span>
+          </label>
+          <input id="fileInput" type="file" accept="image/*" class="sr-only">
+          <!-- Cadangan untuk HP bila getUserMedia tidak tersedia (mis. akses lewat HTTP LAN) -->
+          <input id="cameraFallback" type="file" accept="image/*" capture="environment" class="sr-only">
+
+          <div class="divider"><span>atau</span></div>
+
+          <button id="btnCamera" type="button" class="btn btn-camera btn-block">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M4 8a2 2 0 012-2h1.5l1-1.5h7L16.5 6H18a2 2 0 012 2v9a2 2 0 01-2 2H6a2 2 0 01-2-2z"/><circle cx="12" cy="12.5" r="3.5"/>
+            </svg>
+            Ambil foto dengan kamera
+          </button>
+
+          <!-- Preview -->
+          <div id="previewBox" class="hidden" style="margin-top:20px">
+            <div class="preview-frame">
+              <img id="previewImg" alt="Pratinjau foto rimpang yang akan diklasifikasikan">
+            </div>
+            <div class="preview-meta">
+              <span id="fileName" class="truncate"></span>
+              <button id="btnClear" type="button" class="link">Hapus foto</button>
+            </div>
+          </div>
+
+          <p id="errorMsg" class="error hidden" role="alert"></p>
+
+          <button id="btnClassify" type="button" class="btn btn-primary btn-classify btn-block" disabled>Klasifikasikan</button>
+        </section>
+      </div>
+
+      <!-- ===================== KOLOM KANAN: HASIL ===================== -->
+      <section class="col" aria-labelledby="judul-hasil" aria-live="polite">
+        <div class="panel-head">
+          <h2 id="judul-hasil">Hasil analisis AI</h2>
+          <p>Jenis rimpang, peluang tiap kelas, dan kartu edukasi muncul di sini.</p>
+        </div>
+
+        <!-- Keadaan kosong -->
+        <div id="emptyState" class="card empty">
+          <div class="empty-icon" aria-hidden="true">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 8V6a2 2 0 012-2h2M16 4h2a2 2 0 012 2v2M20 16v2a2 2 0 01-2 2h-2M8 20H6a2 2 0 01-2-2v-2"/>
+              <path d="M8 15.5l2.6-3.2 2 2.3 1.6-1.8 1.8 2.7"/>
+            </svg>
+          </div>
+          <h3>Belum ada hasil</h3>
+          <p>Unggah atau ambil foto rimpang, lalu tekan Klasifikasikan.</p>
+          <ul class="tips">
+            <li>Letakkan rimpang di latar polos, misalnya piring putih atau talenan</li>
+            <li>Dekatkan kamera hingga rimpang memenuhi sebagian besar foto</li>
+            <li>Gunakan cahaya terang tanpa bayangan keras</li>
+          </ul>
+        </div>
+
+        <!-- Foto belum dikenali dengan yakin (ditolak oleh penjaga hasil di app.py) -->
+        <div id="rejectState" class="card empty hidden" role="status">
+          <div class="empty-icon reject-icon" aria-hidden="true">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10.3 3.9L2.4 17.5a2 2 0 001.7 3h15.8a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/>
+              <path d="M12 9.5v4.2M12 17h.01"/>
+            </svg>
+          </div>
+          <h3>Foto belum dikenali dengan yakin</h3>
+          <p id="rejectReason"></p>
+          <p id="rejectGuess" class="reject-guess"></p>
+          <ul class="tips">
+            <li>Pastikan foto berisi rimpang (jahe, kencur, kunyit, lengkuas, atau temulawak)</li>
+            <li>Letakkan rimpang di latar polos dan dekatkan kamera</li>
+            <li>Gunakan cahaya terang tanpa bayangan keras</li>
+          </ul>
+          <p id="rejectNote" class="reject-note hidden"><span id="rejectHistoryText"></span> <button type="button" id="btnRejectHistory" class="link-btn hidden"></button></p>
+        </div>
+
+        <!-- Loading -->
+        <div id="loadingState" class="card loading hidden">
+          <div class="spinner" aria-hidden="true"></div>
+          <p>Model sedang menganalisis foto...</p>
+        </div>
+
+        <!-- Hasil -->
+        <div id="resultState" class="stack hidden">
+
+          <!-- Prediksi utama -->
+          <article class="result-hero" id="mainCard">
+            <div class="result-row">
+              <div>
+                <p class="res-cap">Terdeteksi sebagai</p>
+                <p id="resLabel" class="res-label"></p>
+                <p id="resLatin" class="res-latin"></p>
+              </div>
+              <div class="res-conf-box">
+                <p class="res-cap">Tingkat keyakinan</p>
+                <p id="resConf" class="res-conf"></p>
+              </div>
+            </div>
+            <p id="lowConfWarn" class="notice hidden"></p>
+            <p id="modeBadge" class="notice notice-demo hidden"></p>
+            <p id="historyHint" class="res-hint hidden"><span id="historyHintText"></span> <button type="button" id="btnHintAction" class="res-hint-btn hidden"></button></p>
+          </article>
+
+          <!-- Probabilitas 5 kelas -->
+          <article class="card block">
+            <h3>Peluang tiap jenis rimpang</h3>
+            <ul id="probList" class="prob-list"></ul>
+            <p id="resTime" class="meta"></p>
+          </article>
+
+          <!-- Kartu edukasi -->
+          <article class="card block edu" id="eduCard">
+            <h3>Kenali <span id="eduName"></span></h3>
+            <dl class="edu-grid">
+              <div><dt>Ciri fisik</dt><dd id="eduCiri"></dd></div>
+              <div><dt>Aroma</dt><dd id="eduAroma"></dd></div>
+              <div class="edu-wide"><dt>Manfaat dan kegunaan</dt><dd><ul id="eduManfaat" class="bullets"></ul></dd></div>
+              <div class="edu-wide tip"><dt>Cara membedakan dari yang mirip</dt><dd id="eduTips"></dd></div>
+            </dl>
+            <p id="eduDisclaimer" class="disclaimer"></p>
+          </article>
+
+          <!-- Feedback / error case -->
+          <article class="card block">
+            <div class="fb-head">
+              <div>
+                <h3>Hasilnya keliru?</h3>
+                <p class="card-hint">Laporan Anda disimpan untuk analisis error model.</p>
+              </div>
+              <button id="btnFeedback" type="button" class="btn btn-ghost" aria-expanded="false" aria-controls="feedbackForm">Laporkan prediksi salah</button>
+            </div>
+
+            <div id="feedbackForm" class="fb-form hidden">
+              <div>
+                <label for="correctLabel" class="label">Jenis yang sebenarnya</label>
+                <select id="correctLabel" class="field">
+                  <option>Jahe</option><option>Kencur</option><option>Kunyit</option><option>Lengkuas</option><option>Temulawak</option>
+                  <option>Bukan rimpang</option>
+                </select>
+              </div>
+              <div>
+                <label for="feedbackNote" class="label">Catatan (opsional)</label>
+                <textarea id="feedbackNote" rows="3" maxlength="500" class="field" placeholder="Contoh: foto gelap, rimpang sudah diiris"></textarea>
+              </div>
+              <div><button id="btnSendFeedback" type="button" class="btn btn-primary">Kirim laporan</button></div>
+            </div>
+            <p id="feedbackMsg" class="fb-msg hidden"></p>
+          </article>
+        </div>
+      </section>
+    </div>
+
+    <!-- ===================== TIM PENGEMBANG: KELOMPOK 3 =====================
+         Cara mengubah: edit nama, NPM, peran, dan link Instagram (href + teks @username) pada tiap <article class="member-card">.
+         Kartu tidak memakai foto maupun deskripsi peran. -->
+    <section class="team" aria-labelledby="judul-tim">
+      <h2 id="judul-tim" class="team-title">Kelompok 3</h2>
+      <p class="card-hint">Tim Pengembang KenaliRimpang beserta peran dan tanggung jawab masing-masing.</p>
+
+      <div class="team-grid">
+        <article class="member-card">
+          <h3 class="member-name">Febriyanti Ritonga</h3>
+          <p class="member-npm">2410631160012</p>
+          <a class="member-ig" href="https://www.instagram.com/febrii.ritonga/" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg><span>@febrii.ritonga</span></a>
+          <span class="role-badge role-pm">Project Manager</span>
+        </article>
+
+        <article class="member-card">
+          <h3 class="member-name">Hanny Yusnia Amelia</h3>
+          <p class="member-npm">2410631160015</p>
+          <a class="member-ig" href="https://www.instagram.com/USERNAME/" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg><span>@username</span></a>
+          <span class="role-badge role-ds">Dataset Engineer</span>
+        </article>
+
+        <article class="member-card">
+          <h3 class="member-name">Farhan Ali Rahman</h3>
+          <p class="member-npm">2410631160060</p>
+          <a class="member-ig" href="https://www.instagram.com/frhnalr_/" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg><span>@frhnalr_</span></a>
+          <span class="role-badge role-ai">AI Engineer</span>
+        </article>
+
+        <article class="member-card">
+          <h3 class="member-name">Kayla Luthfi Anasya</h3>
+          <p class="member-npm">2410631160066</p>
+          <a class="member-ig" href="https://www.instagram.com/kaylaanasy/" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg><span>@kaylaanasy</span></a>
+          <span class="role-badge role-sc">Data Scientist</span>
+        </article>
+
+        <article class="member-card">
+          <h3 class="member-name">Alif Khafid Pratama</h3>
+          <p class="member-npm">2410631160004</p>
+          <a class="member-ig" href="https://www.instagram.com/alifkhafidp/" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg><span>@alifkhafidp</span></a>
+          <span class="role-badge role-se">Software Engineer</span>
+        </article>
+      </div>
+    </section>
+  </div>
+
+  <!-- ===================== DIALOG KAMERA ===================== -->
+  <dialog id="cameraDialog" class="camera-dialog" aria-labelledby="cameraTitle">
+    <div class="inner">
+      <h3 id="cameraTitle" class="camera-title">Ambil foto rimpang</h3>
+      <div class="camera-stage">
+        <video id="cameraVideo" autoplay playsinline muted></video>
+        <p id="cameraStatus" class="camera-status">Mengaktifkan kamera...</p>
+      </div>
+      <div class="camera-actions">
+        <button id="btnShot" type="button" class="btn btn-primary" disabled>Ambil Foto</button>
+        <button id="btnCloseCamera" type="button" class="btn btn-ghost">Batal</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- ===================== DIALOG MASUK / DAFTAR ===================== -->
+  <dialog id="authDialog" class="modal" aria-labelledby="authTitle">
+    <div class="inner">
+      <!-- Judul besar ini hanya tampil di halaman login (saat login wajib) -->
+      <div id="authBrand" class="auth-brand hidden">
+        <h1 class="auth-brand-title">Kenali<span>Rimpang</span></h1>
+        <p>Aplikasi klasifikasi rempah rimpang berbasis kecerdasan buatan.</p>
+      </div>
+      <h3 id="authTitle" class="camera-title">Masuk ke akun</h3>
+      <div class="auth-tabs" role="tablist">
+        <button id="tabMasuk" type="button" role="tab" aria-selected="true" class="auth-tab active">Masuk</button>
+        <button id="tabDaftar" type="button" role="tab" aria-selected="false" class="auth-tab">Daftar</button>
+      </div>
+      <p id="authHint" class="card-hint"></p>
+      <form id="authForm" class="auth-form" novalidate>
+        <div>
+          <label for="authUser" class="label">Nama pengguna</label>
+          <input id="authUser" class="field" type="text" autocomplete="username" maxlength="30" autocapitalize="none" spellcheck="false">
+        </div>
+        <div>
+          <label for="authPass" class="label">Kata sandi</label>
+          <input id="authPass" class="field" type="password" autocomplete="current-password" maxlength="128">
+        </div>
+        <div id="authPass2Wrap" class="hidden">
+          <label for="authPass2" class="label">Ulangi kata sandi</label>
+          <input id="authPass2" class="field" type="password" autocomplete="new-password" maxlength="128">
+        </div>
+        <p id="authError" class="error hidden" role="alert"></p>
+        <div class="camera-actions">
+          <button id="btnAuthSubmit" type="submit" class="btn btn-primary">Masuk</button>
+          <button id="btnAuthCancel" type="button" class="btn btn-ghost">Batal</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- ===================== DIALOG RIWAYAT ===================== -->
+  <dialog id="historyDialog" class="modal modal-wide" aria-labelledby="historyTitle">
+    <div class="inner">
+      <div class="modal-head">
+        <h3 id="historyTitle" class="camera-title">Riwayat pengecekan</h3>
+        <button id="btnCloseHistory" type="button" class="btn btn-ghost">Tutup</button>
+      </div>
+      <p id="historyInfo" class="card-hint"></p>
+      <div id="historyList" class="history-list"></div>
+      <p id="historyEmpty" class="history-empty hidden">Belum ada riwayat. Klasifikasikan sebuah foto rimpang saat Anda masuk, dan hasilnya akan muncul di sini.</p>
+      <p id="historyError" class="error hidden" role="alert"></p>
+      <div class="modal-foot">
+        <button id="btnDownloadHistory" type="button" class="btn btn-primary hidden" title="Unduh riwayat sebagai file CSV (bisa dibuka di Excel). Foto tidak ikut diunduh.">Unduh riwayat (CSV)</button>
+        <button id="btnClearHistory" type="button" class="btn btn-ghost hidden">Hapus semua riwayat</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+  <script src="local-api.js?v=1"></script>
+  <script src="script.js?v=9"></script>
+</body>
+</html>
