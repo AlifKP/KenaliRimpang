@@ -1,5 +1,5 @@
 {
-  "format": "layers",
+  "format": "graph",
   "img_size": 224,
   "preprocess": "mobilenet",
   "classes": [
