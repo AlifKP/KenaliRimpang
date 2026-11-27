@@ -175,6 +175,48 @@
   }
 
   // ------------------------------------------------------------ model TensorFlow.js
+  // ------------------------------------------------------------ penyesuaian model Keras 3 -> TF.js (layers)
+  // TF.js belum paham beberapa penulisan konfigurasi Keras 3, jadi model.json diterjemahkan dulu di memori.
+  function perbaikiKeras3(node) {
+    if (Array.isArray(node)) { node.forEach(perbaikiKeras3); return node; }
+    if (!node || typeof node !== "object") return node;
+
+    // batch_shape (Keras 3) -> batch_input_shape (TF.js)
+    if (node.batch_shape && !node.batch_input_shape) node.batch_input_shape = node.batch_shape;
+    // dtype berbentuk objek DTypePolicy -> teks biasa
+    if (node.dtype && typeof node.dtype === "object" && node.dtype.class_name === "DTypePolicy") {
+      node.dtype = (node.dtype.config && node.dtype.config.name) || "float32";
+    }
+    // Daftar layer: terjemahkan inbound_nodes gaya Keras 3 ke gaya lama [[nama, node, tensor, {}], ...]
+    if (Array.isArray(node.layers)) {
+      const kumpul = (x, hasil) => {
+        if (x && x.class_name === "__keras_tensor__" && x.config && x.config.keras_history) {
+          const [nama, n, t] = x.config.keras_history;
+          hasil.push([nama, n, t, {}]);
+        } else if (Array.isArray(x)) x.forEach((y) => kumpul(y, hasil));
+        else if (x && typeof x === "object") Object.values(x).forEach((y) => kumpul(y, hasil));
+        return hasil;
+      };
+      node.layers.forEach((l) => {
+        if (Array.isArray(l.inbound_nodes)) {
+          l.inbound_nodes = l.inbound_nodes.map((nd) => (nd && !Array.isArray(nd) && nd.args ? kumpul(nd.args, []) : nd));
+        }
+      });
+      // input_layers / output_layers tunggal ditulis datar: ["nama", 0, 0] -> [["nama", 0, 0]]
+      ["input_layers", "output_layers"].forEach((k) => {
+        if (Array.isArray(node[k]) && typeof node[k][0] === "string") node[k] = [node[k]];
+      });
+    }
+    Object.keys(node).forEach((k) => perbaikiKeras3(node[k]));
+    return node;
+  }
+
+  async function muatLayersKeras3(url) {
+    const artefak = await tf.io.http(url).load();
+    perbaikiKeras3(artefak.modelTopology);
+    return tf.loadLayersModel({ load: async () => artefak });
+  }
+
   let modelPromise = null;
   let cfgModel = null;
 
